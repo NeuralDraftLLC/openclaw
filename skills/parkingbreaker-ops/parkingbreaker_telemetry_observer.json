@@ -1,0 +1,53 @@
+{
+  "name": "parkingbreaker_telemetry_observer",
+  "version": "1.0.0",
+  "description": "Fetches per-city funnel and payment telemetry from ParkingBreaker FastAPI. Used by the Growth Manager persona to identify cities for Reddit ad budget changes.",
+  "entrypoint": "scripts/parkingbreaker_observer.py",
+  "tools": [
+    {
+      "name": "get_city_performance",
+      "description": "GET /telemetry/stats/{city_id} — returns last 30 days of funnel steps, outcomes, and event counts for one city.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city_id": {
+            "type": "string",
+            "description": "Canonical city ID e.g. us-ca-san_francisco. Must match backend/cities/*.json basenames."
+          }
+        },
+        "required": ["city_id"]
+      }
+    },
+    {
+      "name": "get_all_city_performance",
+      "description": "Calls get_city_performance for all 63 active cities and returns a summary table with recommendations.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ],
+  "vault_secrets": [
+    {
+      "key": "PARKINGBREAKER_API_BASE",
+      "description": "ParkingBreaker FastAPI base URL e.g. https://fightcitytickets-production.up.railway.app",
+      "required": true
+    },
+    {
+      "key": "PB_INTERNAL_TOKEN",
+      "description": "Shared secret matching PB_INTERNAL_TOKEN on the backend. Generate with: python3 -c \"import secrets; print(secrets.token_hex(32))\"",
+      "required": true
+    }
+  ],
+  "schedule": {
+    "suggested": "every 4 hours",
+    "openclaw_command": "openclaw schedule \"Every 4 hours check ParkingBreaker city stats and surface Reddit spend recommendations\""
+  },
+  "manager_persona": {
+    "trigger": "heartbeat",
+    "human_in_the_loop": true,
+    "approval_required_for": ["INCREASE_BUDGET", "PAUSE_SPEND"],
+    "approval_channel": "Telegram or WhatsApp"
+  }
+}
