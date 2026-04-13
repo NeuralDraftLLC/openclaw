@@ -48,21 +48,29 @@
 
 **Config file:** `~/.openclaw/openclaw.json`
 
-### MCP servers (already configured)
+### MCP servers (Stripe + others)
+
+OpenClaw only supports **stdio** MCP (`command` / `args`) or **remote** MCP (`url` + optional `headers`, with `transport` `sse` or `streamable-http`). There is no special `"type": "webhook"` entry — webhooks are separate from MCP tools.
+
+**Stripe (official MCP, stdio)** — tools like `list_customers`, `list_payment_intents`, `retrieve_balance`, etc. ([Stripe MCP docs](https://docs.stripe.com/mcp))
 
 ```json
 "mcp": {
   "servers": {
-    "stripe":    { "type": "webhook",      "enabled": true },
-    "chase":     { "type": "oauth",         "enabled": true },
-    "reddit-ads": { "type": "adzviser-mcp",   "enabled": true },
-    "maton":     { "command": "node",
-                    "args": ["/home/amir/.npm-global/lib/node_modules/@maton/mcp/dist/index.js",
-                             "--actions=gmail,notion"],
-                    "env": { "MATON_API_KEY": "..." } }
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp@latest"],
+      "env": {
+        "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+      }
+    }
   }
 }
 ```
+
+Put `STRIPE_SECRET_KEY` in `~/.openclaw/.env` (restricted keys recommended). OpenClaw substitutes `${…}` when the config is loaded.
+
+**Lob (mail / print)** — there is no first-party `@lob/mcp` npm package like Stripe. This workspace includes the **`lob_api`** skill (`skills/lob-api/`) with small Python scripts that call `https://api.lob.com/v1` using **`LOB_API_KEY`** from the environment.
 
 ### Skills (already enabled)
 

@@ -30,39 +30,7 @@ import type {
 const DEFAULT_BOT_ID = "openclaw";
 const DEFAULT_BOT_NAME = "OpenClaw QA";
 
-type QaBusEventSeed =
-  | {
-      kind: "inbound-message";
-      accountId: string;
-      message: QaBusMessage;
-    }
-  | {
-      kind: "outbound-message";
-      accountId: string;
-      message: QaBusMessage;
-    }
-  | {
-      kind: "thread-created";
-      accountId: string;
-      thread: QaBusThread;
-    }
-  | {
-      kind: "message-edited";
-      accountId: string;
-      message: QaBusMessage;
-    }
-  | {
-      kind: "message-deleted";
-      accountId: string;
-      message: QaBusMessage;
-    }
-  | {
-      kind: "reaction-added";
-      accountId: string;
-      message: QaBusMessage;
-      emoji: string;
-      senderId: string;
-    };
+type QaBusEventSeed = Omit<Extract<QaBusEvent, { kind: "inbound-message" }>, "cursor">;
 
 export function createQaBusState() {
   const conversations = new Map<string, QaBusConversation>();
