@@ -1,6 +1,9 @@
 name: CodeQL
 
 on:
+  schedule:
+    # Weekly security scan — Monday 10:00 AM PDT = 17:00 UTC
+    - cron: "0 17 * * 1"
   workflow_dispatch:
 
 concurrency:
