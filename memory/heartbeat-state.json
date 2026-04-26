@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "lastChecks": {
+    "railway": null,
+    "git": null,
+    "parkingbreaker": null,
+    "pytest": null
+  },
+  "rotation": {
+    "runCounter": 0,
+    "lastPytestSha": null
+  },
+  "adOps": {
+    "lastSnapshotHash": null,
+    "lastDeltaSeenAt": null,
+    "lastBudgetDryRunAt": null,
+    "lastAlertedCityAction": {},
+    "cooldownsSeconds": {
+      "perCityAction": 7200,
+      "escalationP0": 0,
+      "budgetDryRun": 14400
+    }
+  }
+}
