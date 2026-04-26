@@ -1,0 +1,73 @@
+{
+  "_comment": "OpenClaw cron job registry. This file is the canonical source of truth for all scheduled pipeline tasks. Install with: crontab -e, then copy the crontab entries from CRON.md. Never add --execute to budget_executor.py without explicit human approval.",
+  "_last_updated": "2026-04-26",
+  "jobs": [
+    {
+      "id": "parkingbreaker_observer",
+      "description": "Fetch ParkingBreaker telemetry from Railway and write delta snapshot. HEARTBEAT.md reads this output — it must run BEFORE any heartbeat turn.",
+      "schedule": "0 */4 * * *",
+      "schedule_human": "Every 4 hours at :00",
+      "script": "~/.openclaw/skills/parkingbreaker-ops/scripts/parkingbreaker_observer.py",
+      "command": "python3 ~/.openclaw/skills/parkingbreaker-ops/scripts/parkingbreaker_observer.py",
+      "working_dir": "~/homebase/code/FIGHTCITYTICKETS-1",
+      "env_required": ["RAILWAY_API_TOKEN", "FIGHTCITYTICKETS_API_URL"],
+      "log": "~/.openclaw/logs/parkingbreaker_observer.log",
+      "output_files": [
+        "~/homebase/code/FIGHTCITYTICKETS-1/memory/ad-ops/latest.delta.json",
+        "~/homebase/code/FIGHTCITYTICKETS-1/memory/heartbeat-state.json"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "business_pulse",
+      "description": "Finance threshold alert: Stripe < $50, Lob < $15. Offsets 2h from observer so it runs after a fresh snapshot is available.",
+      "schedule": "0 2,6,10,14,18,22 * * *",
+      "schedule_human": "Every 4 hours at :00, offset by 2h from observer (02:00, 06:00, 10:00, 14:00, 18:00, 22:00)",
+      "script": "~/homebase/code/FIGHTCITYTICKETS-1/backend/scripts/business-pulse.sh",
+      "command": "bash ~/homebase/code/FIGHTCITYTICKETS-1/backend/scripts/business-pulse.sh",
+      "working_dir": "~/homebase/code/FIGHTCITYTICKETS-1",
+      "env_required": ["STRIPE_SECRET_KEY", "LOB_API_KEY"],
+      "thresholds": {
+        "stripe_balance_alert_below_usd": 50,
+        "lob_balance_alert_below_usd": 15
+      },
+      "log": "~/.openclaw/logs/business_pulse.log",
+      "enabled": true
+    },
+    {
+      "id": "budget_executor_dryrun",
+      "description": "Daily AD-OPS dry-run. Evaluates Reddit budget recommendations but NEVER executes. Output is reviewed by heartbeat. To promote to live execution, explicit human approval is required — change --dry-run to --execute only after Telegram confirmation.",
+      "schedule": "0 6 * * *",
+      "schedule_human": "Daily at 06:00",
+      "script": "~/.openclaw/skills/parkingbreaker-ops/scripts/budget_executor.py",
+      "command": "python3 ~/.openclaw/skills/parkingbreaker-ops/scripts/budget_executor.py --dry-run",
+      "working_dir": "~/homebase/code/FIGHTCITYTICKETS-1",
+      "env_required": ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_REFRESH_TOKEN"],
+      "safety_rule": "NEVER change --dry-run to --execute without explicit human approval via Telegram.",
+      "log": "~/.openclaw/logs/budget_executor_dryrun.log",
+      "enabled": true
+    },
+    {
+      "id": "city_recertification_monthly",
+      "description": "Monthly compute gate sweep across all active cities in triple_layer_roster.json. Calls process_city_for_export() fresh on every city. Reports ready/review/blocked/errors counts. Runs at 3am on the 1st to avoid overlap with other jobs.",
+      "schedule": "0 3 1 * *",
+      "schedule_human": "1st of every month at 03:00",
+      "script": "~/homebase/code/FIGHTCITYTICKETS-1/backend/src/scheduler.py",
+      "command": "cd ~/homebase/code/FIGHTCITYTICKETS-1/backend && PYTHONPATH=src python3 src/scheduler.py --job city_recertification_monthly",
+      "working_dir": "~/homebase/code/FIGHTCITYTICKETS-1/backend",
+      "env_required": ["DATABASE_URL"],
+      "log": "~/.openclaw/logs/city_recertification_monthly.log",
+      "enabled": true
+    }
+  ],
+  "global": {
+    "log_dir": "~/.openclaw/logs/",
+    "state_file": "~/homebase/code/FIGHTCITYTICKETS-1/memory/heartbeat-state.json",
+    "delta_file": "~/homebase/code/FIGHTCITYTICKETS-1/memory/ad-ops/latest.delta.json",
+    "cooldowns_seconds": {
+      "per_city_action": 3600,
+      "budget_dry_run": 86400,
+      "escalation_p0": 0
+    }
+  }
+}
